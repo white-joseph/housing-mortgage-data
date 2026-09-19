@@ -179,3 +179,7 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# Project data — raw, cleaned, and linked datasets are all excluded.
+# The Google Drive folder is the distribution channel for data, not Git.
+data/
