@@ -1,0 +1,13 @@
+name: housing-data
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pandas
+  - requests
+  - jupyter
+  - ipykernel
+  - pip
+  - pip:
+      - pyprojroot
