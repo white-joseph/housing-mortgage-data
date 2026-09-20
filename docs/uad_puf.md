@@ -7,7 +7,7 @@ Official documentation can be found [here](https://www.fhfa.gov/document/d/uad-a
 
 The former is a based on a 5% representative sample of nationally representative random sample of appraisals for single-family mortgages acquired by the Enterprises. The current release (Version 2.1) covers appraisals from 2013-2022. The latter is based on a five percent nationally representative random sample of appraisals for single-family mortgages insured by the Federal Housing Administration (FHA). The current release (Version 1.0) covers appraisals from 2017-2022.
 
-Each observation in this dataset represents a single property appraisal record. The dataset is appraisal-level, so a property that was appraised twice, i.e., at purchase and refinancing, would be two separate observations. There are several geographic identifiers, including the state and county fips code for the 2010 and 2020 census, respectively. They also include the tract fips code for the 2010 census for appraisals that were conducted from 2013 - 2021 (except for 2020), and then the tract fips codes for the 2020 census for properties appraised in 2022. The dataset includes properties in the 50 U.S. states, the District of Columbia, and Puerto Rico. 
+Each observation in this dataset represents a single property appraisal record. The dataset is appraisal-level, so a property that was appraised twice, i.e., at purchase and refinancing, would be two separate observations. There are several geographic identifiers, including the state and county fips code for the 2010 and 2020 census, respectively. They also include the tract fips code for the 2010 census for appraisals that were conducted from 2013 - 2021, and then the tract fips codes for the 2020 census for properties appraised in 2022. The dataset includes properties in the 50 U.S. states, the District of Columbia, and Puerto Rico. 
 
 ## Additional Documentation
 
@@ -21,6 +21,20 @@ Each observation in this dataset represents a single property appraisal record. 
 ## Quality & Limitations
 
 ## Relevant Variables
+- `record_id`
+- `year`
+- `state_fips_2010` / `county_fips_2010` / `tract_fips_2010`
+- `state_fips_2020` / `county_fips_2020` / `tract_fips_2020`
+- `purpose`
+- `contract_price`
+- `appraised_value`
+- `appraisal_to_contract`
+- `owner_occupied`
+- `quality`
+- `condition`
+- `gross_living_area`
+- `bedrooms` / `bathrooms`
+- `lot_size`
 
 ## Data Dictionary for The Enterprise UAD Appraisal-Level PUF
 
