@@ -1,13 +1,26 @@
 # Documentation for the Uniform Appraisal Dataset (UAD) Appraisal-Level Public Use File (PUF)
 
-This data was created by the Federal Housing Finance Agency (FHFA) and can be split into two separate datasets:
+Official documentation can be found [here](https://www.fhfa.gov/document/d/uad-al/uad-puf-2.1-data-documentation.pdf) and the data dictionary [here](https://www.fhfa.gov/document/d/uad-al/uad-puf-2.1-data-dictionary.pdf). This data was created by the Federal Housing Finance Agency (FHFA) and can be split into two separate datasets:
 
-(1) The Enterprise UAD Appraisal-Level PUF
-(2) The FHA UAD Appraisal-Level PUF
+- (1) The Enterprise UAD Appraisal-Level PUF
+- (2) The FHA UAD Appraisal-Level PUF
 
 The former is a based on a 5% representative sample of nationally representative random sample of appraisals for single-family mortgages acquired by the Enterprises. The current release (Version 2.1) covers appraisals from 2013-2022. The latter is based on a five percent nationally representative random sample of appraisals for single-family mortgages insured by the Federal Housing Administration (FHA). The current release (Version 1.0) covers appraisals from 2017-2022.
 
-Descriptions and allowable values below are reproduced verbatim from FHFA's *UAD PUF Version 2.1 Data Dictionary* (2/4/2025). "Count of NaN" and "% Null" reflect the actual missingness observed in the downloaded raw files, not the data dictionary itself.
+Each observation in this dataset represents a single property appraisal record. The dataset is appraisal-level, so a property that was appraised twice, i.e., at purchase and refinancing, would be two separate observations. There are several geographic identifiers, including the state and county fips code for the 2010 and 2020 census, respectively. They also include the tract fips code for the 2010 census for appraisals that were conducted from 2013 - 2021 (except for 2020), and then the tract fips codes for the 2020 census for properties appraised in 2022. The dataset includes properties in the 50 U.S. states, the District of Columbia, and Puerto Rico. 
+
+## Additional Documentation
+
+- UAD appraisal records only contain mortgage loans requiring traditional appraisals, i.e., when automatic appraisals suffice, the Enterprises waive traditional appraisals.
+- UAD appraisal records may include some appraisals related to other lending sources, including FHA and portfolio loans, as well as appraisals not connected to any mortgage loan, such as those associated with a denied loan application.
+    - UAD appraisal records include appraisals not connected to any loan, such as appraisals associated with non-transacted loans. 
+- Inlcudes only final appraisals
+- Appraisals for single-family properties appraised using Fannie Mae Form 1004 or Freddie Mac Form 70 are included, and condominiums, manufactured homes, and small multifamily rental property appraisals as well as other appraisals are excluded. 
+- For appraisals with purchase transaction type, only appraisals for arm’s length transactions are included, and appraisals for real estate owned (REO), short sale, and foreclosure purchase transactions are excluded. 
+
+## Quality & Limitations
+
+## Relevant Variables
 
 ## Data Dictionary for The Enterprise UAD Appraisal-Level PUF
 
