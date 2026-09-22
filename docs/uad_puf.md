@@ -15,7 +15,7 @@ The UAD Appraisal-Level PUF is fully public, with no registration, licensing, or
 
 ## Cleaned Dataset
 
-The cleaning script (`src/uad/clean_uad.py`) subsets both raw files to the 19 columns aobe, applies the transformations below, and stacks Enterprise and FHA datasets into a single file, `uad_clean` (1,748,342 rows, one row per appraisal, unique on `record_id`).
+The cleaning script (`src/uad/clean_uad.py`) subsets both raw files to the 19 columns above, applies the transformations below, and stacks Enterprise and FHA datasets into a single file, `uad_clean` (1,748,342 rows, one row per appraisal, unique on `record_id`).
 
 **What changed from the raw files:**
 - FIPS codes are zero-padded (state: 2 digits, county: 5, tract: 11) and coalesced into single `state_fips`/`county_fips`/`tract_fips` columns, using the 2010 fips for 2013-2021 and 2020 fips for 2022.
@@ -51,10 +51,11 @@ The cleaning script (`src/uad/clean_uad.py`) subsets both raw files to the 19 co
 
 ## Additional Documentation
 
+- Enterprise coverage begins in 2013 and FHA coverage begins in 2017. The two files are not symmetric in time span.
 - UAD appraisal records only contain mortgage loans requiring traditional appraisals, i.e., when automatic appraisals suffice, the Enterprises waive traditional appraisals.
 - UAD appraisal records may include some appraisals related to other lending sources, including FHA and portfolio loans, as well as appraisals not connected to any mortgage loan, such as those associated with a denied loan application.
     - UAD appraisal records include appraisals not connected to any loan, such as appraisals associated with non-transacted loans. 
-- Inlcudes only final appraisals
+- Includes only final appraisals
 - Appraisals for single-family properties appraised using Fannie Mae Form 1004 or Freddie Mac Form 70 are included, and condominiums, manufactured homes, and small multifamily rental property appraisals as well as other appraisals are excluded. 
 - For appraisals with purchase transaction type, only appraisals for arm’s length transactions are included, and appraisals for real estate owned (REO), short sale, and foreclosure purchase transactions are excluded. 
 
@@ -71,7 +72,7 @@ The cleaning script (`src/uad/clean_uad.py`) subsets both raw files to the 19 co
 - Several continuous fields (`lot_size`, `gross_living_area`) are binned. 
 - Some categorical fields were recoded to fewer categories (e.g. `quality`/`condition` merge their top two grades into one code), and dollar fields are top/bottom-coded, with `contract_price` capped at $1.7M in high-cost areas and $720k elsewhere.
 
-FHFA separately publishes aggregate UAD statistics computed from 100% of a broader eligible sample. Estimates from this PUF will not match those statistics, and the two shouldn't be benchmarked against each other.
+FHFA separately publishes aggregate UAD statistics computed from 100% of a broader eligible population. Estimates from this PUF will not match those statistics, and the two shouldn't be benchmarked against each other.
 
 FHFA states this data is intended to show patterns and geographic variation in appraisals. It explicitly advises against using it to appraise individual properties, judge individual appraiser quality, or infer the prevalence of specific property characteristics among all properties in an area, since the file reflects only appraisals actually performed in a period, not a census of properties.
 
@@ -91,27 +92,28 @@ FHFA states this data is intended to show patterns and geographic variation in a
 - `bedrooms` / `bathrooms`
 - `lot_size`
 
-## Data Dictionary for UAD Appraisal-Level PUF relevant variables
+## Data Dictionary for UAD Appraisal-Level PUF — Relevant Variables
 
-40 columns, 1,481,868 records.
+Enterprise (1,481,868 observations) and FHA (266,474 observations).
 
-| Column Name | Data Type | Description | Example / Allowed Values | Count of NaN | % Null |
+| Column Name | Data Type | Description | Example / Allowed Values | Enterprise NaN (Count / %) | FHA NaN (Count / %) |
 | :--- | :--- | :--- | :--- | ---: | ---: |
-| `record_id` | Character | Unique Appraisal ID. A unique identification value for each appraisal record. FHFA created this data field. It has no relationship to any unique identification data fields in the original UAD appraisal records. | — | 0 | 0.00 |
-| `year` | Numeric | Appraisal Year. The year of the appraisal report effective date. This data field is used to stratify the sample. | 2013, 2014, etc. | 0 | 0.00 |
-| `state_fips_2010` | Character | 2010 Census State FIPS Code. 2010 Census State Federal Information Processing System (FIPS) Code (e.g., 02, 15). | Characters 1-2: State | 104224 | 7.03 |
-| `state_fips_2020` | Character | 2020 Census State FIPS Code. 2020 Census State Federal Information Processing System (FIPS) Code (e.g., 02, 15). | Characters 1-2: State | 1377644 | 92.97 |
-| `county_fips_2010` | Character | 2010 Census County FIPS Code. 2010 Census County FIPS Code (e.g., 01001, 13005). County is suppressed when fewer than 11 appraisal records exist in that county in the year of that appraisal. A missing county number means either data suppression or FHFA did not have sufficient address information. | Characters 1-2: State; Characters 3-5: County | 105182 | 7.10 |
-| `county_fips_2020` | Character | 2020 Census County FIPS Code. 2020 Census County FIPS Code (e.g., 01001, 13005). | Characters 1-2: State; Characters 3-5: County | 1377661 | 92.97 |
-| `tract_fips_2010` | Character | 2010 Census Tract. The 2010 Census Tract for the subject property for appraisals conducted from 2013–2021. Due to potential disclosure issues, FHFA cannot provide 2020 census tract values for these records. Tract is suppressed when fewer than 11 appraisal records exist in that Census Tract in the year of that appraisal. | Characters 1-2: State; Characters 3-5: County; Characters 6-11: Tract | 124064 | 8.37 |
-| `tract_fips_2020` | Character | 2020 Census Tract. The 2020 Census Tract for the subject property for appraisals conducted in 2022. | Characters 1-2: State; Characters 3-5: County; Characters 6-11: Tract | 1379126 | 93.07 |
-| `purpose` | Character | Mortgage Loan Purpose. Reason for a mortgage loan, limited to either a home purchase, refinance or other purpose. A home purchase mortgage is a transaction when a loan is originated for the purpose of buying a home from a different entity. A refinance is a transaction in which a borrower with an existing mortgage takes out a new mortgage and uses the proceeds from the new mortgage to repay the original mortgage. Other includes mortgages for which appraisers did not select purchase or refinance but instead provided a description in a text field. | '1' = Home Purchase; '2' = Refinance; '3' = Other; '9' = Missing | 0 | 0.00 |
-| `contract_price` | Numeric | Contract Price. For purchase transactions, this is the contract price of the subject property as of the appraisal report date. | $5,000 - $1,705,000 | 735631 | 49.64 |
-| `lot_size` | Character | Lot Size. The appraiser-reported subject property site size, calculated in acres. | '1' = Less than 1/8 acre; '2' = 1/8 up to 1/4 acre; '3' = 1/4 up to 1/2 acre; '4' = 1/2 up to 1 acre; '5' = 1+ acre; '9' = Missing | 0 | 0.00 |
-| `quality` | Character | Quality of Construction Rating. Appraiser-specified overall rating of the subject property's construction quality of as of the appraisal effective date. | '1' = Q1; '2' = Q2; '3' = Q3; '4' = Q4; '5' = Q5 and Q6; '9' = Missing | 0 | 0.00 |
-| `condition` | Character | Condition Rating. Appraiser-specified rating of the subject property's condition rating as of the appraisal effective date. | '1' = C1; '2' = C2; '3' = C3; '4' = C4; '5' = C5 and C6; '9' = Missing | 0 | 0.00 |
-| `bathrooms` | Character | Number of Bathrooms. Appraiser-reported total number of above-grade and below-grade full and half bathrooms in the subject property. | '1' = 1 Bathroom; '2' = 2 Bathrooms; '3' = 3 Bathrooms; '4' = 4+ Bathrooms; '9' = Missing | 0 | 0.00 |
-| `bedrooms` | Character | Number of Bedrooms. Appraiser-reported total number of above-grade and below-grade bedrooms in the subject property. | '1' = 0 to 2 Bedrooms; '2' = 3 Bedrooms; '3' = 4+ Bedrooms; '9' = Missing | 0 | 0.00 |
-| `gross_living_area` | Character | Gross Living Area. Appraiser-reported total area of all above-grade and below-grade inhabitable rooms in the subject property, reported in square feet. | '1' = Less than 1,250 sq. ft.; '2' = 1,250 to 1,499 sq. ft.; '3' = 1,500 to 1,749 sq. ft.; '4' = 1,750 to 1,999 sq. ft.; '5' = 2,000 to 2,249 sq. ft.; '6' = 2,250 to 2,499 sq. ft.; '7' = 2,500 to 2,999 sq. ft.; '8' = 3,000 or more sq. ft.; '9' = Missing | 0 | 0.00 |
-| `appraised_value` | Numeric | Appraised Value. Appraiser-specified value indication of the subject property, reconciling all approaches to value. | $5,000 to $1,705,000 | 0 | 0.00 |
-| `appraisal_to_contract` | Numeric | Percentage of Appraised Value to Contract Price. The ratio, as a percentage, of the subject property's appraised value and the contract price. | 50.0% to 150.0% | 735631 | 49.64 |
+| `record_id` | Character | Unique Appraisal ID. A unique identification value for each appraisal record. FHFA created this data field. It has no relationship to any unique identification data fields in the original UAD appraisal records. | — | 0 / 0.00 | 0 / 0.00 |
+| `year` | Numeric | Appraisal Year. The year of the appraisal report effective date. This data field is used to stratify the sample. | 2013, 2014, etc. | 0 / 0.00 | 0 / 0.00 |
+| `state_fips_2010` | Character | 2010 Census State FIPS Code. | Characters 1-2: State | 104224 / 7.03 | 37089 / 13.92 |
+| `state_fips_2020` | Character | 2020 Census State FIPS Code. Populated only for appraisals conducted in 2022. | Characters 1-2: State | 1377644 / 92.97 | 229385 / 86.08 |
+| `county_fips_2010` | Character | 2010 Census County FIPS Code. County is suppressed when fewer than 11 appraisal records exist in that county-year. | Characters 1-2: State; 3-5: County | 105182 / 7.10 | 37487 / 14.07 |
+| `county_fips_2020` | Character | 2020 Census County FIPS Code. Populated only for 2022. | Characters 1-2: State; 3-5: County | 1377661 / 92.97 | 229454 / 86.11 |
+| `tract_fips_2010` | Character | 2010 Census Tract. For appraisals conducted 2013–2021. Tract is suppressed when fewer than 11 appraisal records exist in that tract-year. | Characters 1-2: State; 3-5: County; 6-11: Tract | 124064 / 8.37 | 76873 / 28.85 |
+| `tract_fips_2020` | Character | 2020 Census Tract. Populated only for 2022. | Characters 1-2: State; 3-5: County; 6-11: Tract | 1379126 / 93.07 | 238833 / 89.63 |
+| `purpose` | Character | Mortgage Loan Purpose: home purchase, refinance, or other. | '1' = Home Purchase; '2' = Refinance; '3' = Other; '9' = Missing | 0 / 0.00 | 0 / 0.00 |
+| `owner_occupied` | Character | Occupancy status at time of appraisal. | '1' = Yes; '2' = No; '9' = Missing | 0 / 0.00 | 0 / 0.00 |
+| `contract_price` | Numeric | Contract price, purchase transactions only. | $5,000 - $1,705,000 | 735631 / 49.64 | 56825 / 21.32 |
+| `lot_size` | Character | Appraiser-reported site size, in acres, binned. | '1'–'5' bins; '9' = Missing | 0 / 0.00 | 0 / 0.00 |
+| `quality` | Character | Construction quality rating. | '1'–'4' = Q1–Q4; '5' = Q5 and Q6; '9' = Missing | 0 / 0.00 | 0 / 0.00 |
+| `condition` | Character | Property condition rating. | '1'–'4' = C1–C4; '5' = C5 and C6; '9' = Missing | 0 / 0.00 | 0 / 0.00 |
+| `bathrooms` | Character | Total full and half bathrooms. | '1'–'3' = 1–3; '4' = 4+; '9' = Missing | 0 / 0.00 | 0 / 0.00 |
+| `bedrooms` | Character | Total bedrooms. | '1' = 0-2; '2' = 3; '3' = 4+; '9' = Missing | 0 / 0.00 | 0 / 0.00 |
+| `gross_living_area` | Character | Total inhabitable area, sq. ft., binned. | '1'–'8' bins; '9' = Missing | 0 / 0.00 | 0 / 0.00 |
+| `appraised_value` | Numeric | Final reconciled appraised value. | $5,000 to $1,705,000 | 0 / 0.00 | 7209 / 2.71 |
+| `appraisal_to_contract` | Numeric | Appraised value as % of contract price. | 50.0% to 150.0% | 735631 / 49.64 | 62344 / 23.40 |
