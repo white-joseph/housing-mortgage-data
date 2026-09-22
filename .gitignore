@@ -180,6 +180,9 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
-# Project data — raw, cleaned, and linked datasets are all excluded.
-# The Google Drive folder is the distribution channel for data, not Git.
+# Raw, cleaned, and linked datasets are all excluded.
+
 data/
+*.Rproj
+.Rproj.user
+*.Rhistory
