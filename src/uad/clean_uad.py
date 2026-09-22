@@ -95,23 +95,9 @@ fha_clean["tract_fips"] = fha_clean["tract_fips"].astype("string")
 
 # Convert 9's to NaN
 
-enterprise_clean.loc[enterprise_clean["purpose"] == 9, "purpose"] = np.nan
-enterprise_clean.loc[enterprise_clean["owner_occupied"] == 9, "owner_occupied"] = np.nan
-enterprise_clean.loc[enterprise_clean["lot_size"] == 9, "lot_size"] = np.nan
-enterprise_clean.loc[enterprise_clean["quality"] == 9, "quality"] = np.nan
-enterprise_clean.loc[enterprise_clean["condition"] == 9, "condition"] = np.nan
-enterprise_clean.loc[enterprise_clean["bathrooms"] == 9, "bathrooms"] = np.nan
-enterprise_clean.loc[enterprise_clean["bedrooms"] == 9, "bedrooms"] = np.nan
-enterprise_clean.loc[enterprise_clean["gross_living_area"] == 9, "gross_living_area"] = np.nan
-
-fha_clean.loc[fha_clean["purpose"] == 9, "purpose"] = np.nan
-fha_clean.loc[fha_clean["owner_occupied"] == 9, "owner_occupied"] = np.nan
-fha_clean.loc[fha_clean["lot_size"] == 9, "lot_size"] = np.nan
-fha_clean.loc[fha_clean["quality"] == 9, "quality"] = np.nan
-fha_clean.loc[fha_clean["condition"] == 9, "condition"] = np.nan
-fha_clean.loc[fha_clean["bathrooms"] == 9, "bathrooms"] = np.nan
-fha_clean.loc[fha_clean["bedrooms"] == 9, "bedrooms"] = np.nan
-fha_clean.loc[fha_clean["gross_living_area"] == 9, "gross_living_area"] = np.nan
+cols_to_null = ["purpose", "owner_occupied", "lot_size", "quality", "condition", "bathrooms", "bedrooms", "gross_living_area"]
+for df in [enterprise_clean, fha_clean]:
+    df[cols_to_null] = df[cols_to_null].replace(9, np.nan)
 
 # Convert to ordered categorical
 
@@ -197,14 +183,17 @@ drop_cols = [
     "state_fips_2010_clean", "county_fips_2010_clean", "tract_fips_2010_clean",
     "state_fips_2020_clean", "county_fips_2020_clean", "tract_fips_2020_clean",
 ]
-enterprise_clean = enterprise_clean.drop(columns=drop_cols, errors="ignore")
-fha_clean = fha_clean.drop(columns=drop_cols, errors="ignore")
+enterprise_clean = enterprise_clean.drop(columns = drop_cols, errors = "ignore")
+fha_clean = fha_clean.drop(columns = drop_cols, errors = "ignore")
 
 # Stack datasets
 
-df_clean = pd.concat([enterprise_clean, fha_clean], ignore_index=True)
+df_clean = pd.concat([enterprise_clean, fha_clean], ignore_index = True)
 
 # Save cleaned data as .parquet and .dta
 
-df_clean.to_parquet(here("data/clean/uad_clean.parquet"), index=False)
-df_clean.to_stata(here("data/clean/uad_clean.dta"), write_index=False)
+# df_clean.to_parquet(here("data/clean/uad_clean.parquet"), index = False)
+# print(f"Saving cleaned UAD PUF to {here("data/clean/uad_clean.parquet")}")
+
+df_clean.to_stata(here("data/clean/uad_clean.dta"), write_index = False)
+print(f"Saving cleaned UAD PUF to {here("data/clean/uad_clean.dta")}")
