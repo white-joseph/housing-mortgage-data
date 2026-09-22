@@ -9,47 +9,7 @@ The former is a based on a 5% representative sample of nationally representative
 
 Each observation in this dataset represents a single property appraisal record. The dataset is appraisal-level, so a property that was appraised twice, i.e., at purchase and refinancing, would be two separate observations. There are several geographic identifiers, including the state and county fips code for the 2010 and 2020 census, respectively. They also include the tract fips code for the 2010 census for appraisals that were conducted from 2013 - 2021, and then the tract fips codes for the 2020 census for properties appraised in 2022. The dataset includes properties in the 50 U.S. states, the District of Columbia, and Puerto Rico. 
 
-## Access & Redistribution
-
-The UAD Appraisal-Level PUF is fully public, with no registration, licensing, or data-use agreement required. Raw files, cleaned files, and derived outputs can be shared freely.
-
-## Cleaned Dataset
-
-The cleaning script (`src/uad/clean_uad.py`) subsets both raw files to the 19 columns above, applies the transformations below, and stacks Enterprise and FHA datasets into a single file, `uad_clean` (1,748,342 rows, one row per appraisal, unique on `record_id`).
-
-**What changed from the raw files:**
-- FIPS codes are zero-padded (state: 2 digits, county: 5, tract: 11) and coalesced into single `state_fips`/`county_fips`/`tract_fips` columns, using the 2010 fips for 2013-2021 and 2020 fips for 2022.
-- The `'9' = Missing` is true `NaN` in `purpose`, `owner_occupied`, `lot_size`, `quality`, `condition`, `bathrooms`, `bedrooms`, and `gross_living_area`.
-- Those same eight fields are converted to categorical datatypes, with the six ordinal/binned fields (`lot_size`, `quality`, `condition`, `bathrooms`, `bedrooms`, `gross_living_area`) changed to ordered categories. Category codes are unchanged from the raw numeric coding
-
-**New columns:**
-- `purchase`: A boolean, `True` when `purpose == 1` (Home Purchase), `False` for refinance/other, missing when `purpose` itself is missing.
-- `program` — `'enterprise'` or `'fha'`, identifying which source file the row came from, since the two are now stacked into one table.
-
-**Output files:**  `data/clean/uad_clean.dta`
-
-| Column Name | Data Type | Description | Count of NaN | % Null |
-| :--- | :--- | :--- | ---: | ---: |
-| `record_id` | int64 | Unique appraisal ID (unchanged from raw). | 0 | 0.00 |
-| `year` | int64 | Appraisal year. | 0 | 0.00 |
-| `purpose` | category | Loan purpose; codes unchanged (1/2/3), '9' recoded to NaN. | 341 | 0.02 |
-| `owner_occupied` | category | Occupancy status; codes unchanged (1/2), '9' recoded to NaN. | 335 | 0.02 |
-| `contract_price` | float64 | Contract price (purchase transactions only; unchanged). | 792456 | 45.33 |
-| `lot_size` | category (ordered) | Binned lot size, codes 1-5. | 9717 | 0.56 |
-| `quality` | category (ordered) | Construction quality, codes 1-5. | 32 | 0.00 |
-| `condition` | category (ordered) | Condition rating, codes 1-5. | 24 | 0.00 |
-| `bathrooms` | category (ordered) | Bathroom count, codes 1-4. | 7757 | 0.44 |
-| `bedrooms` | category (ordered) | Bedroom count, codes 1-3. | 1101 | 0.06 |
-| `gross_living_area` | category (ordered) | Binned square footage, codes 1-8. | 333 | 0.02 |
-| `appraised_value` | float64 | Final appraised value (unchanged). | 7209 | 0.41 |
-| `appraisal_to_contract` | float64 | Appraised value as % of contract price (unchanged). | 797975 | 45.64 |
-| `state_fips` | string | 2-digit state FIPS, coalesced across vintages. | 0 | 0.00 |
-| `county_fips` | string | 5-digit county FIPS, coalesced across vintages. | 1442 | 0.08 |
-| `tract_fips` | string | 11-digit tract FIPS, coalesced across vintages; NaN where suppressed. | 70554 | 4.04 |
-| `purchase` | derived | `True`/`False`/missing flag for purchase transactions. See note below. | — | — |
-| `program` | string | Source file: `'enterprise'` or `'fha'`. | 0 | 0.00 |
-
-## Additional Documentation
+## Relevant Documentation
 
 - Enterprise coverage begins in 2013 and FHA coverage begins in 2017. The two files are not symmetric in time span.
 - UAD appraisal records only contain mortgage loans requiring traditional appraisals, i.e., when automatic appraisals suffice, the Enterprises waive traditional appraisals.
@@ -92,7 +52,7 @@ FHFA states this data is intended to show patterns and geographic variation in a
 - `bedrooms` / `bathrooms`
 - `lot_size`
 
-## Data Dictionary for UAD Appraisal-Level PUF — Relevant Variables
+## Data Dictionary for UAD Appraisal-Level PUF: Relevant Variables
 
 Enterprise (1,481,868 observations) and FHA (266,474 observations).
 
@@ -117,3 +77,43 @@ Enterprise (1,481,868 observations) and FHA (266,474 observations).
 | `gross_living_area` | Character | Total inhabitable area, sq. ft., binned. | '1'–'8' bins; '9' = Missing | 0 / 0.00 | 0 / 0.00 |
 | `appraised_value` | Numeric | Final reconciled appraised value. | $5,000 to $1,705,000 | 0 / 0.00 | 7209 / 2.71 |
 | `appraisal_to_contract` | Numeric | Appraised value as % of contract price. | 50.0% to 150.0% | 735631 / 49.64 | 62344 / 23.40 |
+
+## Access & Redistribution
+
+The UAD Appraisal-Level PUF is fully public, with no registration, licensing, or data-use agreement required. Raw files, cleaned files, and derived outputs can be shared freely.
+
+## Cleaned Dataset
+
+The cleaning script (`src/uad/clean_uad.py`) subsets both raw files to the 19 columns above, applies the transformations below, and stacks Enterprise and FHA datasets into a single file, `uad_clean` (1,748,342 rows, one row per appraisal, unique on `record_id`).
+
+**What changed from the raw files:**
+- FIPS codes are zero-padded (state: 2 digits, county: 5, tract: 11) and coalesced into single `state_fips`/`county_fips`/`tract_fips` columns, using the 2010 fips for 2013-2021 and 2020 fips for 2022.
+- The `'9' = Missing` is true `NaN` in `purpose`, `owner_occupied`, `lot_size`, `quality`, `condition`, `bathrooms`, `bedrooms`, and `gross_living_area`.
+- Those same eight fields are converted to categorical datatypes, with the six ordinal/binned fields (`lot_size`, `quality`, `condition`, `bathrooms`, `bedrooms`, `gross_living_area`) changed to ordered categories. Category codes are unchanged from the raw numeric coding
+
+**New columns:**
+- `purchase`: A boolean, `True` when `purpose == 1` (Home Purchase), `False` for refinance/other, missing when `purpose` itself is missing.
+- `program` — `'enterprise'` or `'fha'`, identifying which source file the row came from, since the two are now stacked into one table.
+
+**Output files:**  `data/clean/uad_clean.dta`
+
+| Column Name | Data Type | Description | Count of NaN | % Null |
+| :--- | :--- | :--- | ---: | ---: |
+| `record_id` | int64 | Unique appraisal ID (unchanged from raw). | 0 | 0.00 |
+| `year` | int64 | Appraisal year. | 0 | 0.00 |
+| `purpose` | category | Loan purpose; codes unchanged (1/2/3), '9' recoded to NaN. | 341 | 0.02 |
+| `owner_occupied` | category | Occupancy status; codes unchanged (1/2), '9' recoded to NaN. | 335 | 0.02 |
+| `contract_price` | float64 | Contract price (purchase transactions only; unchanged). | 792456 | 45.33 |
+| `lot_size` | category (ordered) | Binned lot size, codes 1-5. | 9717 | 0.56 |
+| `quality` | category (ordered) | Construction quality, codes 1-5. | 32 | 0.00 |
+| `condition` | category (ordered) | Condition rating, codes 1-5. | 24 | 0.00 |
+| `bathrooms` | category (ordered) | Bathroom count, codes 1-4. | 7757 | 0.44 |
+| `bedrooms` | category (ordered) | Bedroom count, codes 1-3. | 1101 | 0.06 |
+| `gross_living_area` | category (ordered) | Binned square footage, codes 1-8. | 333 | 0.02 |
+| `appraised_value` | float64 | Final appraised value (unchanged). | 7209 | 0.41 |
+| `appraisal_to_contract` | float64 | Appraised value as % of contract price (unchanged). | 797975 | 45.64 |
+| `state_fips` | string | 2-digit state FIPS, coalesced across vintages. | 0 | 0.00 |
+| `county_fips` | string | 5-digit county FIPS, coalesced across vintages. | 1442 | 0.08 |
+| `tract_fips` | string | 11-digit tract FIPS, coalesced across vintages; NaN where suppressed. | 70554 | 4.04 |
+| `purchase` | derived | `True`/`False`/missing flag for purchase transactions. See note below. | — | — |
+| `program` | string | Source file: `'enterprise'` or `'fha'`. | 0 | 0.00 |
