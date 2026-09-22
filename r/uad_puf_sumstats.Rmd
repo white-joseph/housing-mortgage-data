@@ -1,0 +1,72 @@
+---
+title: "uad_puf_sumstats"
+output: pdf_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+# Necessary packages
+packages = c("tidyverse", "haven", "here")
+
+# Install then load or load
+
+package.check <- lapply(packages, FUN = function(x) {
+  # If not installed, install then load into the environment
+  if (!require(x, character.only = TRUE)) {
+    install.packages(x, dependencies = TRUE)
+    library(x, character.only = TRUE)
+  } else {
+    # If already installed, load it into the environment
+    library(x, character.only = TRUE)
+  }
+})
+
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+
+# Load dataset
+
+df <- read_dta(here("data", "clean", "uad_clean.dta"))
+head(df)
+
+df %>%
+  filter(program == "enterprise") %>%
+  group_by(year) %>%
+  summarise(non_null_appraisals = sum(!is.na(appraised_value))) %>% 
+  ggplot(mapping = aes(x = year, y = non_null_appraisals)) +
+    geom_col(fill = "steelblue") +
+    scale_x_continuous(breaks = unique(df$year)) +
+    labs(
+      x = "Year",
+      y = "Count of Non-Null Appraisals",
+      title = "Count of Non-Null Enterprise Appraisals by Year"
+    ) +
+    theme_minimal()
+
+df %>%
+  filter(program == "fha") %>%
+  group_by(year) %>%
+  summarise(non_null_appraisals = sum(!is.na(appraised_value))) %>% 
+  ggplot(mapping = aes(x = year, y = non_null_appraisals)) +
+    geom_col(fill = "darkred") +
+    scale_x_continuous(breaks = unique(df$year)) +
+    labs(
+      x = "Year",
+      y = "Count of Non-Null Appraisals",
+      title = "Count of Non-Null FHA Appraisals by Year"
+    ) +
+    theme_minimal()
+
+```
+
+
