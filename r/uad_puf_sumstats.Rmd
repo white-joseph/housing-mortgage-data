@@ -1,15 +1,15 @@
 ---
-title: "uad_puf_sumstats"
-output: pdf_document
+title: "Summary Statistics of UAD PUF"
+output: html_document
 date: "`r Sys.Date()`"
 ---
 
 ```{r setup, include=FALSE}
 
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 # Necessary packages
-packages = c("tidyverse", "haven", "here")
+packages = c("tidyverse", "haven", "here", "usmap", "vtable", "kableExtra")
 
 # Install then load or load
 
@@ -26,47 +26,112 @@ package.check <- lapply(packages, FUN = function(x) {
 
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+## Observations over time
 
 ```{r}
 
 # Load dataset
 
 df <- read_dta(here("data", "clean", "uad_clean.dta"))
-head(df)
 
 df %>%
-  filter(program == "enterprise") %>%
-  group_by(year) %>%
-  summarise(non_null_appraisals = sum(!is.na(appraised_value))) %>% 
-  ggplot(mapping = aes(x = year, y = non_null_appraisals)) +
-    geom_col(fill = "steelblue") +
-    scale_x_continuous(breaks = unique(df$year)) +
+  group_by(program, year) %>%
+  summarise(non_null_appraisals = sum(!is.na(appraised_value)), .groups = "drop") %>%
+  ggplot(aes(x = year, y = non_null_appraisals, fill = program)) +
+    geom_col() +
+    scale_x_continuous(breaks = 2013:2022) +
+    facet_wrap(~ program, scales = "free_x") +
+    labs(x = "Year", y = "Count of Non-Null Appraisals", title = "Appraisals by Year and Program") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+## Geographic summary stats
+
+```{r}
+
+df %>%
+  summarise(across(c("state_fips", "county_fips", "tract_fips"), ~ n_distinct(.x, na.rm = TRUE))) %>%
+  knitr::kable()
+
+df %>% 
+  count(state_fips, sort = TRUE) %>%
+  head(10) %>%
+  mutate(state_name = fips_info(state_fips)$full) %>%
+  select(state_fips, state_name, count = n) %>%
+  knitr::kable()
+
+```
+
+## Appraisal summary stats
+
+```{r}
+
+st(df, 
+   vars = c("appraised_value", "contract_price"),
+   summ = c("notNA(x)", "mean(x)", "quantile(x, 0.10, na.rm=TRUE)", "median(x)", "quantile(x, 0.90, na.rm=TRUE)"),
+   summ.names = c("N", "Mean", "10th Percentile", "Median", "90th Percentile"),
+   group = "program",
+   out = "return"
+   ) %>%
+  knitr::kable(format.args = list(big.mark = ",")) %>%
+  kableExtra::kable_styling(bootstrap_options = c("striped", "bordered", "condensed"), full_width = FALSE)
+
+df %>% 
+  filter(program == "enterprise", !is.na(appraised_value)) %>%
+  
+  ggplot(aes(x = appraised_value)) +
+    geom_histogram(binwidth = 10000, fill = "steelblue", color = "white") +
     labs(
-      x = "Year",
-      y = "Count of Non-Null Appraisals",
-      title = "Count of Non-Null Enterprise Appraisals by Year"
-    ) +
+      x = "Appraised Value",
+      y = "Count",
+      title = "Distribution of Enterprise Apprasied Value") +
     theme_minimal()
 
-df %>%
-  filter(program == "fha") %>%
-  group_by(year) %>%
-  summarise(non_null_appraisals = sum(!is.na(appraised_value))) %>% 
-  ggplot(mapping = aes(x = year, y = non_null_appraisals)) +
-    geom_col(fill = "darkred") +
-    scale_x_continuous(breaks = unique(df$year)) +
+df %>% 
+  filter(program == "fha", !is.na(appraised_value)) %>%
+  
+  ggplot(aes(x = appraised_value)) +
+    geom_histogram(binwidth = 10000, fill = "darkred", color = "white") +
     labs(
-      x = "Year",
-      y = "Count of Non-Null Appraisals",
-      title = "Count of Non-Null FHA Appraisals by Year"
-    ) +
+      x = "Appraised Value",
+      y = "Count",
+      title = "Distribution of FHA Apprasied Value") +
     theme_minimal()
 
 ```
 
+## Appraisal to contract ratio
 
+```{r}
+
+df %>%
+  filter(!is.na(appraisal_to_contract)) %>%
+  ggplot(aes(x = appraisal_to_contract, fill = program)) +
+    geom_histogram(binwidth = 1, color = "white") +
+    geom_vline(xintercept = 100, linetype = "dashed", color = "black") +
+    facet_wrap(~ program, scales = "free_y") +
+    coord_cartesian(xlim = c(85, 115)) +
+    labs(x = "Appraisal-to-Contract Ratio (%)", y = "Count",
+         title = "Appraised Value as a Percentage of Contract Price") +
+    theme_minimal()
+
+```
+
+## Property characterstics
+
+```{r}
+
+df %>%
+  select(quality, condition, bedrooms, bathrooms, lot_size, gross_living_area) %>%
+  mutate(across(everything(), as_factor)) %>%
+  pivot_longer(cols = everything(), names_to = "Variable", values_to = "Value") %>%
+  ggplot(aes(x = Value)) +
+    geom_bar(fill = "steelblue") +
+    facet_wrap(~ Variable, scales = "free") +
+    scale_y_continuous(labels = scales::comma) +
+    theme_minimal() +
+    labs(title = "Distribution of Property Characteristics")
+
+```
