@@ -186,3 +186,6 @@ data/
 *.Rproj
 .Rproj.user
 *.Rhistory
+
+# Exploratory notebooks — superseded by src/uad/clean_uad.py and download_uad.py
+notebooks/
