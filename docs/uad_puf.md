@@ -93,7 +93,7 @@ The cleaning script (`src/uad/clean_uad.py`) subsets both raw files to the 19 co
 
 **New columns:**
 - `purchase`: A boolean, `True` when `purpose == 1` (Home Purchase), `False` for refinance/other, missing when `purpose` itself is missing.
-- `program` — `'enterprise'` or `'fha'`, identifying which source file the row came from, since the two are now stacked into one table.
+- `program`: `'enterprise'` or `'fha'`, identifying which source file the row came from, since the two are now stacked into one table.
 
 **Output files:**  `data/clean/uad_clean.dta`
 
@@ -115,5 +115,5 @@ The cleaning script (`src/uad/clean_uad.py`) subsets both raw files to the 19 co
 | `state_fips` | string | 2-digit state FIPS, coalesced across vintages. | 0 | 0.00 |
 | `county_fips` | string | 5-digit county FIPS, coalesced across vintages. | 1442 | 0.08 |
 | `tract_fips` | string | 11-digit tract FIPS, coalesced across vintages; NaN where suppressed. | 70554 | 4.04 |
-| `purchase` | derived | `True`/`False`/missing flag for purchase transactions. See note below. | — | — |
+| `purchase` | derived | `True`/`False`/missing flag for purchase transactions. | — | — |
 | `program` | string | Source file: `'enterprise'` or `'fha'`. | 0 | 0.00 |
