@@ -1,6 +1,6 @@
 ---
 title: "Summary Statistics of UAD PUF"
-output: html_document
+output: pdf_document
 date: "`r Sys.Date()`"
 ---
 
@@ -68,15 +68,21 @@ df %>%
 
 ```{r}
 
-st(df, 
-   vars = c("appraised_value", "contract_price"),
-   summ = c("notNA(x)", "mean(x)", "quantile(x, 0.10, na.rm=TRUE)", "median(x)", "quantile(x, 0.90, na.rm=TRUE)"),
-   summ.names = c("N", "Mean", "10th Percentile", "Median", "90th Percentile"),
-   group = "program",
-   out = "return"
-   ) %>%
+df %>%
+  select(program, appraised_value, contract_price) %>%
+  pivot_longer(cols = c(appraised_value, contract_price), names_to = "Variable", values_to = "Value") %>%
+  filter(!is.na(Value)) %>%
+  group_by(Variable, program) %>%
+  summarise(
+    N = n(),
+    Mean = mean(Value),
+    `10th Percentile` = quantile(Value, 0.10),
+    Median = median(Value),
+    `90th Percentile` = quantile(Value, 0.90),
+    .groups = "drop"
+  ) %>%
   knitr::kable(format.args = list(big.mark = ",")) %>%
-  kableExtra::kable_styling(bootstrap_options = c("striped", "bordered", "condensed"), full_width = FALSE)
+  kableExtra::kable_styling(latex_options = c("striped", "hold_position"))
 
 df %>% 
   filter(program == "enterprise", !is.na(appraised_value)) %>%
