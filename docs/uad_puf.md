@@ -117,3 +117,13 @@ The cleaning script (`src/uad/clean_uad.py`) subsets both raw files to the 19 co
 | `tract_fips` | string | 11-digit tract FIPS, coalesced across vintages; NaN where suppressed. | 70554 | 4.04 |
 | `purchase` | derived | `True`/`False`/missing flag for purchase transactions. | — | — |
 | `program` | string | Source file: `'enterprise'` or `'fha'`. | 0 | 0.00 |
+
+## Summary & Research Possibilities
+
+This dataset gives a property level view of appraisals. It includes contract prices, appraised values, and property characteristics, with state/county/tract coverage. It does not include information on loan terms, borrower information, or performance outcomes (these will come from the Fannie Mae Loan Performance data).
+
+In my opinion the most notable aspect of this dataset is the density in the appraisal-to-contract ratio. The appraised values are almost exactly above or slightly above 100% of the contract price far more often than I would think. This is consistent with the idea that appriasers try to hit the number needed in order to close a sale. You can see this pretty clearly in both the Enterprise as well as FHA appraisals, and is something that could be interesting to look more into.
+
+The two source files also differ in a few ways that are worth mentioning. FHA records have noticeably higher nulls on geography (`tract_fips` is suppressed for roughly 30% of pre-2022 FHA records vs. roughly 8% for Enterprise) and on `appraised_value` itself (~2.7% missing for FHA vs. 0% for Enterprise). This might reflect FHA appraisals skewing toward smaller, more rural markets that hit FHFA's minimum-record-count suppression threshold more often.
+
+UAD shares the 2010 census tracts with HMDA through 2021. This would make it possible to compare appraisal-level property values against HMDA's loan-level lending patterns at the tract level. Linking to Fannie Mae's loan performance data would need to be at a larger geographic profile (The finest Fannie Mae offers is ZIP3). It could still support market questions relating property valuation patterns to eventual loan outcomes.
