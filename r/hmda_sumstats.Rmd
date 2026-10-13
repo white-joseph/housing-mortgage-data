@@ -1,0 +1,224 @@
+---
+title: "Summary Statistics of HMDA"
+output: pdf_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+# Necessary packages
+packages = c("tidyverse", "haven", "here", "usmap", "kableExtra")
+
+# Install then load or load
+
+package.check <- lapply(packages, FUN = function(x) {
+  # If not installed, install then load into the environment
+  if (!require(x, character.only = TRUE)) {
+    install.packages(x, dependencies = TRUE)
+    library(x, character.only = TRUE)
+  } else {
+    # If already installed, load it into the environment
+    library(x, character.only = TRUE)
+  }
+})
+
+```
+
+## Rows read vs. kept
+
+```{r}
+
+log <- read_csv(here("outputs", "hmda_cleaning_log.csv"))
+
+log %>%
+  mutate(year = as.character(year)) %>%
+  select(Year = year, `Rows read` = rows_read, `Rows kept` = rows_kept) %>%
+  knitr::kable(format.args = list(big.mark = ",")) %>%
+  kableExtra::kable_styling(latex_options = c("striped", "hold_position"))
+
+log %>%
+  pivot_longer(c(rows_read, rows_kept), names_to = "type", values_to = "rows") %>%
+  mutate(type = recode(type, rows_read = "Read", rows_kept = "Kept")) %>%
+  ggplot(aes(x = year, y = rows / 1e6, fill = type)) +
+    geom_col(position = "dodge") +
+    scale_x_continuous(breaks = 2018:2025) +
+    labs(x = "Year", y = "Loans (millions)", fill = "", title = "Raw Rows vs. Kept Purchase Loans") +
+    theme_minimal()
+
+```
+
+## Loan-level summary stats by year
+
+```{r}
+
+summarise_year <- function(year) {
+  df <- read_dta(
+    here("data", "clean", "hmda", paste0("hmda_clean_", year, ".dta")),
+    col_select = c(loan_type, loan_amount, income, combined_loan_to_value_ratio,
+                   interest_rate, property_value)
+  )
+  tibble(
+    year = as.character(year),
+    N = nrow(df),
+    mean_loan = mean(df$loan_amount, na.rm = TRUE),
+    median_loan = median(df$loan_amount, na.rm = TRUE),
+    mean_income = mean(df$income, na.rm = TRUE),
+    mean_rate = mean(df$interest_rate, na.rm = TRUE),
+    mean_cltv = mean(df$combined_loan_to_value_ratio, na.rm = TRUE),
+    share_fha = mean(df$loan_type == 2),
+    share_va = mean(df$loan_type == 3),
+    miss_cltv = mean(is.na(df$combined_loan_to_value_ratio)),
+    miss_rate = mean(is.na(df$interest_rate)),
+    miss_value = mean(is.na(df$property_value))
+  )
+}
+
+by_year <- map_dfr(2018:2025, summarise_year)
+
+by_year %>%
+  select(Year = year, N, `Mean Loan` = mean_loan, `Median Loan` = median_loan,
+         `Mean Rate` = mean_rate, `Mean CLTV` = mean_cltv) %>%
+  knitr::kable(digits = 1, format.args = list(big.mark = ",")) %>%
+  kableExtra::kable_styling(latex_options = c("striped", "hold_position"))
+
+```
+
+Loan type shares and missing shares (`loan_type`: 1 = conventional, 2 = FHA, 3 = VA, 4 = USDA).
+
+```{r}
+
+by_year %>%
+  select(Year = year, `FHA` = share_fha, `VA` = share_va,
+         `No CLTV` = miss_cltv, `No Rate` = miss_rate, `No Value` = miss_value) %>%
+  mutate(across(-Year, ~ scales::percent(.x, accuracy = 0.1))) %>%
+  knitr::kable() %>%
+  kableExtra::kable_styling(latex_options = c("striped", "hold_position"))
+
+by_year %>%
+  mutate(year = as.numeric(year)) %>%
+  ggplot(aes(x = year, y = mean_rate)) +
+    geom_line() +
+    geom_point() +
+    scale_x_continuous(breaks = 2018:2025) +
+    labs(x = "Year", y = "Mean Interest Rate (%)", title = "Mean Interest Rate on Purchase Loans") +
+    theme_minimal()
+
+```
+
+## Distributions (2023)
+
+One year only, the plots are actually readable.
+
+```{r}
+
+df23 <- read_dta(
+  here("data", "clean", "hmda", "hmda_clean_2023.dta"),
+  col_select = c(loan_amount, combined_loan_to_value_ratio, interest_rate)
+)
+
+ggplot(df23, aes(x = loan_amount)) +
+  geom_histogram(binwidth = 10000) +
+  coord_cartesian(xlim = c(0, 1500000)) +
+  labs(x = "Loan Amount ($)", y = "Loans", title = "Loan Amount, 2023") +
+  theme_minimal()
+
+```
+
+Combined loan-to-value ratio. The spikes at 80 and 96.5 are the usual 20%-down and FHA minimum-down-payment cutoffs.
+
+```{r}
+
+df23 %>%
+  filter(!is.na(combined_loan_to_value_ratio)) %>%
+  ggplot(aes(x = combined_loan_to_value_ratio)) +
+    geom_histogram(binwidth = 1) +
+    coord_cartesian(xlim = c(20, 110)) +
+    labs(x = "Combined LTV (%)", y = "Loans", title = "Combined LTV, 2023") +
+    theme_minimal()
+
+df23 %>%
+  filter(!is.na(interest_rate), interest_rate > 0, interest_rate < 12) %>%
+  ggplot(aes(x = interest_rate)) +
+    geom_histogram(binwidth = 0.125) +
+    labs(x = "Interest Rate (%)", y = "Loans", title = "Interest Rate, 2023") +
+    theme_minimal()
+
+rm(df23)
+
+```
+
+## Tract-year file
+
+```{r}
+
+tracts <- read_dta(here("data", "clean", "hmda", "hmda_tract_year.dta"))
+
+tracts %>%
+  group_by(activity_year) %>%
+  summarise(
+    Tracts = n(),
+    `Median Loans` = median(n_loans),
+    `Share < 11 Loans` = scales::percent(mean(n_loans < 11), accuracy = 0.1)
+  ) %>%
+  rename(Year = activity_year) %>%
+  mutate(Year = as.character(Year)) %>%
+  knitr::kable(format.args = list(big.mark = ",")) %>%
+  kableExtra::kable_styling(latex_options = c("striped", "hold_position"))
+
+```
+
+The number of tracts jumps in 2022 because HMDA switches from 2010 to 2020 census tract boundaries.
+
+```{r}
+
+tracts %>%
+  filter(n_loans <= 150) %>%
+  ggplot(aes(x = n_loans)) +
+    geom_histogram(binwidth = 5) +
+    geom_vline(xintercept = 11, linetype = "dashed") +
+    labs(x = "Loans in Tract-Year", y = "Tract-Years",
+         title = "Loans per Tract-Year (dashed = 11)") +
+    theme_minimal()
+
+tracts %>%
+  mutate(state_fips = substr(census_tract, 1, 2)) %>%
+  group_by(state_fips) %>%
+  summarise(count = sum(n_loans)) %>%
+  arrange(desc(count)) %>%
+  head(10) %>%
+  mutate(state_name = fips_info(state_fips)$full) %>%
+  select(state_fips, state_name, count) %>%
+  knitr::kable(format.args = list(big.mark = ","))
+
+```
+
+## Linked HMDA-UAD file
+
+```{r, eval = file.exists(here("data", "combined", "hmda_uad_tract_year.dta"))}
+
+linked <- read_dta(here("data", "combined", "hmda_uad_tract_year.dta"))
+
+linked %>%
+  count(year, link_status) %>%
+  pivot_wider(names_from = link_status, values_from = n, values_fill = 0) %>%
+  mutate(`Share HMDA Matched` = scales::percent(both / (both + hmda_only), accuracy = 0.1),
+         year = as.character(year)) %>%
+  rename(Year = year, Both = both, `HMDA Only` = hmda_only, `UAD Only` = uad_only) %>%
+  knitr::kable(format.args = list(big.mark = ",")) %>%
+  kableExtra::kable_styling(latex_options = c("striped", "hold_position"))
+
+linked %>%
+  filter(link_status == "both", year == 2021,
+         !is.na(hmda_property_value_mean), !is.na(uad_purchase_value_mean)) %>%
+  ggplot(aes(x = uad_purchase_value_mean, y = hmda_property_value_mean)) +
+    geom_point(alpha = 0.05) +
+    geom_abline(slope = 1, intercept = 0, color = "red") +
+    scale_x_log10(labels = scales::comma) +
+    scale_y_log10(labels = scales::comma) +
+    labs(x = "UAD Mean Appraised Value (Purchases)", y = "HMDA Mean Property Value",
+         title = "Tract Mean Values in HMDA vs. UAD, 2021") +
+    theme_minimal()
+
+```
