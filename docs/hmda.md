@@ -1,6 +1,6 @@
 # Documentation for the Home Mortgage Disclosure Act (HMDA) Snapshot National Loan-Level Dataset (LAR)
 
-The data dictionary is [here](https://ffiec.cfpb.gov/documentation/publications/loan-level-datasets/lar-data-fields) and the data are published on the [FFIEC Snapshot National Loan-Level Dataset page](https://ffiec.cfpb.gov/data-publication/snapshot-national-loan-level-dataset/). HMDA data are collected under the Home Mortgage Disclosure Act and published by the Federal Financial Institutions Examination Council (FFIEC) and the Consumer Financial Protection Bureau (CFPB). This is the **Snapshot** version of the **Loan/Application Register (LAR)**, from 2018-2025.
+The data dictionary is [here](https://ffiec.cfpb.gov/documentation/publications/loan-level-datasets/lar-data-fields) and the data are published on the [FFIEC Snapshot National Loan-Level Dataset page](https://ffiec.cfpb.gov/data-publication/snapshot-national-loan-level-dataset/). HMDA data are collected under the Home Mortgage Disclosure Act and published by the Federal Financial Institutions Examination Council (FFIEC) and the Consumer Financial Protection Bureau (CFPB). This is the Snapshot version of the Loan/Application Register (LAR), from 2018-2025.
 
 Each observation is one covered loan or application reported by a financial institution. The raw files contain 99 fields and 137,678,531 records over eight years. The data covers all 50 U.S. states, DC, and territories. 
 
