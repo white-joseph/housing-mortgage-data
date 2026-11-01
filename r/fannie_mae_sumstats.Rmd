@@ -1,0 +1,156 @@
+---
+title: "Summary Statistics of the Fannie Mae Single-Family Loan Performance Data"
+output: pdf_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+# Necessary packages
+packages = c("tidyverse", "haven", "here", "kableExtra")
+
+# Install then load or load
+package.check <- lapply(packages, FUN = function(x) {
+  if (!require(x, character.only = TRUE)) {
+    install.packages(x, dependencies = TRUE)
+    library(x, character.only = TRUE)
+  } else {
+    library(x, character.only = TRUE)
+  }
+})
+
+loan_files <- list.files(here("data", "clean", "fannie-mae", "loans"),
+                         pattern = "\\.dta$", full.names = TRUE)
+log_file <- here("outputs", "fannie_mae_cleaning_log.csv")
+
+```
+
+These are the quarters that I have cleaned so far. I only use the primary dataset, which is not every loan Fannie Mae acquired (see the docs). The recent vintages have had little time to default, so compare outcomes at the same loan age.
+
+## Rows read and loans per quarter
+
+```{r, eval = file.exists(log_file)}
+
+log <- read_csv(log_file)
+
+log %>%
+  select(Quarter = quarter, `Loan-months` = rows_read, Loans = n_loans,
+         `Last period` = last_act_period, `Missing FICO` = share_missing_fico) %>%
+  knitr::kable(format.args = list(big.mark = ",")) %>%
+  kableExtra::kable_styling(latex_options = c("striped", "hold_position"))
+
+```
+
+## Checks
+
+Check for loans with duplicate months, more than one zero balance code, or more than one MSA, and how often `orig_classic_fico` equals the lower of the two older scores.
+
+```{r, eval = file.exists(log_file)}
+
+log %>%
+  select(Quarter = quarter, `Dup. months` = n_loans_dup_months,
+         `>1 zero bal. code` = n_loans_multi_zb, `>1 MSA` = n_loans_multi_msa,
+         `Both FICO` = fico_both_n, `Share equal` = fico_equal_share) %>%
+  knitr::kable(format.args = list(big.mark = ",")) %>%
+  kableExtra::kable_styling(latex_options = c("striped", "hold_position"))
+
+```
+
+## Loan characteristics by acquisition quarter
+
+```{r, eval = length(loan_files) > 0}
+
+cols <- c("acq_quarter", "orig_upb", "oltv", "dti", "orig_rate", "fico_orig",
+          "terminated", "prepaid", "credit_event", "default_completed",
+          "ever_dlq90", "ever_modified")
+
+loans <- map_dfr(loan_files, ~ read_dta(.x, col_select = all_of(cols)))
+
+loans %>%
+  group_by(Quarter = acq_quarter) %>%
+  summarise(Loans = n(),
+            `Mean UPB` = mean(orig_upb, na.rm = TRUE),
+            `Mean OLTV` = mean(oltv, na.rm = TRUE),
+            `Mean DTI` = mean(dti, na.rm = TRUE),
+            `Mean rate` = mean(orig_rate, na.rm = TRUE),
+            `Mean FICO` = mean(fico_orig, na.rm = TRUE)) %>%
+  knitr::kable(digits = 1, format.args = list(big.mark = ",")) %>%
+  kableExtra::kable_styling(latex_options = c("striped", "hold_position"))
+
+```
+
+## Outcomes by acquisition quarter (share of loans)
+
+```{r, eval = length(loan_files) > 0}
+
+loans %>%
+  group_by(Quarter = acq_quarter) %>%
+  # ever_dlq90 is missing for the few loans whose only status is unknown (XX)
+  summarise(Terminated = mean(terminated, na.rm = TRUE), Prepaid = mean(prepaid, na.rm = TRUE),
+            `Credit event` = mean(credit_event, na.rm = TRUE),
+            `Default (completed)` = mean(default_completed, na.rm = TRUE),
+            `Ever 90+ days` = mean(ever_dlq90, na.rm = TRUE),
+            `Ever modified` = mean(ever_modified, na.rm = TRUE)) %>%
+  knitr::kable(digits = 3) %>%
+  kableExtra::kable_styling(latex_options = c("striped", "hold_position"))
+
+```
+
+## Credit score and LTV at origination (the latest quarter I've cleaned)
+
+```{r, eval = length(loan_files) > 0}
+
+last_q <- max(loans$acq_quarter)
+
+loans %>%
+  filter(acq_quarter == last_q) %>%
+  ggplot(aes(x = fico_orig)) +
+    geom_histogram(binwidth = 10, fill = "steelblue", na.rm = TRUE) +
+    labs(x = "FICO at origination", y = "Loans", title = paste("Acquisition quarter", last_q)) +
+    theme_minimal()
+
+loans %>%
+  filter(acq_quarter == last_q) %>%
+  ggplot(aes(x = oltv)) +
+    geom_histogram(binwidth = 2, fill = "steelblue", na.rm = TRUE) +
+    labs(x = "Original LTV (%)", y = "Loans", title = paste("Acquisition quarter", last_q)) +
+    theme_minimal()
+
+```
+
+## Delinquency by loan age
+
+Share of loans that are 30+ and 90+ days delinquent at each age, by acquisition quarter. Later ages only include loans that are still reporting.
+
+```{r, eval = file.exists(here("outputs", "fannie_mae_dlq_by_age.csv"))}
+
+dlq <- read_csv(here("outputs", "fannie_mae_dlq_by_age.csv"))
+
+dlq %>%
+  filter(n_known >= 1000) %>%
+  pivot_longer(c(share_dlq30, share_dlq90), names_to = "type", values_to = "share") %>%
+  mutate(type = recode(type, share_dlq30 = "30+ days", share_dlq90 = "90+ days")) %>%
+  ggplot(aes(x = loan_age, y = 100 * share, color = acq_quarter)) +
+    geom_line() +
+    facet_wrap(~ type, scales = "free_y") +
+    labs(x = "Loan age (months)", y = "% of loans", color = "Acquired") +
+    theme_minimal()
+
+```
+
+## MSA x year (This would be how I would link to HMDA)
+
+```{r, eval = file.exists(here("data", "clean", "fannie-mae", "fannie_mae_msa_year.dta"))}
+
+msa_year <- read_dta(here("data", "clean", "fannie-mae", "fannie_mae_msa_year.dta"))
+
+msa_year %>%
+  group_by(Year = orig_year) %>%
+  summarise(MSAs = n(), Loans = sum(n_loans), `Mean FICO` = mean(fico_mean, na.rm = TRUE),
+            `Mean OLTV` = mean(oltv_mean, na.rm = TRUE)) %>%
+  knitr::kable(digits = 1, format.args = list(big.mark = ",")) %>%
+  kableExtra::kable_styling(latex_options = c("striped", "hold_position"))
+
+```
